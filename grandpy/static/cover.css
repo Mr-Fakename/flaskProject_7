@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300&display=swap');
+
+body {
+    background: radial-gradient(circle, rgb(29, 153, 220) 0%, rgb(0, 98, 160) 100%);
+    background-size: 150% 120%;
+    font-family: 'Ubuntu', sans-serif;
+	text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
+}
+
+#scrollable {
+    scrollbar-color: white;
+    scrollbar-width: thin;
+    color: #b2cee7;
+}
+
+#map {
+  height: 400px;
+  width: 100%;
+}
+
+#wikiLink {
+    color: #bfdcf1;
+}
+
+#wikiLink a {
+    color: #e3e3f8;
+}
+
+#map img
+{
+    max-width : none;
+}
+
+@media (min-width: 768px) {
+    .bd-placeholder-img-lg {
+      font-size: 3.5rem;
+    }
+}
+
+label {
+  position: relative;
+}
+
+label:before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25' viewBox='0 0 25 25' fill-rule='evenodd'%3E%3Cpath d='M16.036 18.455l2.404-2.405 5.586 5.587-2.404 2.404zM8.5 2C12.1 2 15 4.9 15 8.5S12.1 15 8.5 15 2 12.1 2 8.5 4.9 2 8.5 2zm0-2C3.8 0 0 3.8 0 8.5S3.8 17 8.5 17 17 13.2 17 8.5 13.2 0 8.5 0zM15 16a1 1 0 1 1 2 0 1 1 0 1 1-2 0'%3E%3C/path%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+input {
+  padding: 10px 30px;
+}
+
+.searchbar{
+    border: 1px solid #4b4a4a;
+    background-color: #0c6ec2;
+    outline: black;
+    border-radius: 50px;
+    width: 50px;
+    height: 50px;
+    padding: 25px;
+    transition: all 0.4s;
+}
+
+.searchbar:hover {
+    width: 450px;
+    padding-left: 50px;
+    background-color: rgb(29, 153, 220);
+}

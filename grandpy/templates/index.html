@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Placeholder{% endblock %}
+
+{% block main %}
+
+<div id="scrollable" style="overflow-y: scroll; height:350px;">
+
+    <div class="container">
+        <h2 id="pageName">Placeholder title</h2>
+        <hr style="width:50%; margin-left: auto; margin-right: auto;">
+    </div>
+
+    <div class="container">
+        <p id="description">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+    </div>
+
+    <div class="container">
+        <blockquote class="blockquote text-center">
+            <p id="description">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
+            <footer id="wikiLink" class="blockquote-footer">Learn more on
+                <cite>
+                    <a id="" title="Wikipedia" href="">Wikipedia</a>
+                </cite>
+            </footer>
+        </blockquote>
+        <hr>
+    </div>
+
+</div>
+
+<div class="container">
+    <label>
+        <input type="text" id="searchbar" class="searchbar" placeholder="Search..." autocomplete="off">
+    </label>
+    <hr>
+</div>
+
+<div class="container">
+    <!--The div element for the map -->
+    <div id="map"></div>
+</div>
+
+
+{% endblock %}
+
+
+{% block script %}
+<script>
+
+let scrollDiv = document.getElementById("scrollable");
+let history = [];
+
+document.getElementById("searchbar").addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        let input = document.getElementById("searchbar").value
+        submitInput(input)
+    }
+});
+
+function submitInput(input) {
+
+    let new_search = {
+        query: '',
+        title: '',
+        text: '',
+        link: '',
+        mapMarker: ''
+    };
+    new_search.query = input
+
+    fetch('/search', {
+        method: "POST",
+        credentials: "include",
+        body: JSON.stringify(input),
+        cache: "no-cache",
+        headers: new Headers({
+            "content-type": "application/json"
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        {#googleMap(JSON.stringify(data));#}
+    })
+    .catch(function (error) {
+        console.log("Fetch error: " + error);
+    });
+
+    $("#searchbar:text").val('');
+
+    history.push(new_search)
+    console.log(new_search)
+    console.log(history)
+    $("#scrollable").append("<p>" + new_search.query + "</p>");
+
+    scrollDiv.scrollTop = scrollDiv.scrollHeight;
+}
+
+
+</script>
+{% endblock %}
