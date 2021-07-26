@@ -6,18 +6,18 @@
 
 <div id="scrollable" style="overflow-y: scroll; height:350px;">
 
-    <div class="container">
-        <h2 id="pageName">Placeholder title</h2>
+    <div class="container" id="pageNameContainer">
+        <h2 id="pageTitle">Placeholder title</h2>
         <hr style="width:50%; margin-left: auto; margin-right: auto;">
     </div>
 
-    <div class="container">
-        <p id="description">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+    <div class="container" id="queryContainer">
+        <p id="query">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
     </div>
 
-    <div class="container">
+    <div class="container" id="wikiContainer">
         <blockquote class="blockquote text-center">
-            <p id="description">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
+            <p id="wikiExtract">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
             <footer id="wikiLink" class="blockquote-footer">Learn more on
                 <cite>
                     <a id="" title="Wikipedia" href="">Wikipedia</a>
@@ -30,7 +30,7 @@
 </div>
 
 <div class="container">
-    <label>
+    <label for="searchbar">
         <input type="text" id="searchbar" class="searchbar" placeholder="Search..." autocomplete="off">
     </label>
     <hr>
@@ -49,27 +49,23 @@
 <script>
 
 let scrollDiv = document.getElementById("scrollable");
-let history = [];
 
-document.getElementById("searchbar").addEventListener('keypress', (e) => {
+function initMap() {
+    const map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 12,
+        center: { lat: -34.397, lng: 150.644 },
+    });
+    const geocoder = new google.maps.Geocoder();
+
+    document.getElementById("searchbar").addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-        let input = document.getElementById("searchbar").value
-        submitInput(input)
-    }
-});
+        geocodeAddress(geocoder, map);
+        }
+    });
+}
 
-function submitInput(input) {
-
-    let new_search = {
-        query: '',
-        title: '',
-        text: '',
-        link: '',
-        mapMarker: ''
-    };
-    new_search.query = input
-
-    fetch('/search', {
+async function submitInput(input) {
+    const response = await fetch('/search', {
         method: "POST",
         credentials: "include",
         body: JSON.stringify(input),
@@ -77,23 +73,135 @@ function submitInput(input) {
         headers: new Headers({
             "content-type": "application/json"
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        {#googleMap(JSON.stringify(data));#}
-    })
-    .catch(function (error) {
-        console.log("Fetch error: " + error);
     });
+    return response.json();
+}
 
+async function geocodeAddress(geocoder, map) {
+    let input = document.getElementById("searchbar").value;
+    let new_search = {};
+    new_search.query = input;
     $("#searchbar:text").val('');
 
-    history.push(new_search)
-    console.log(new_search)
-    console.log(history)
-    $("#scrollable").append("<p>" + new_search.query + "</p>");
+    const address = JSON.stringify(await submitInput(input));
+    geocoder.geocode({ address: address }, (results, status) => {
+        if (status === "OK") {
+            map.setCenter(results[0].geometry.location);
+            new google.maps.Marker({
+                map: map,
+                position: results[0].geometry.location,
+            });
+            let location = results[0].address_components[1].long_name;
+            let position = JSON.parse(JSON.stringify(results[0].geometry.location));
 
+            wiki(location, position, new_search);
+        } else {
+            alert("Geocode was not successful for the following reason: " + status);
+        }
+    });
+}
+
+function wiki(location, position, new_search) {
+
+    let url = "https://en.wikipedia.org/w/api.php";
+
+    let params = {
+        action: "query",
+        format: "json",
+        prop: "extracts",
+        list: "geosearch",
+        titles: location,
+        exsentences: "10",
+        exlimit: "1",
+        exintro: 1,
+        explaintext: 1,
+        gscoord: position.lat + "|" + position.lng,
+        gsradius: "1000",
+        gslimit: "1"
+    };
+
+    url = url + "?origin=*";
+    Object.keys(params).forEach(function(key){url += "&" + key + "=" + params[key];});
+
+    fetch(url)
+    .then(response => response.json())
+    .then(function(response) {
+        let wikiSearch = response.query.pages;
+        const wikiGeosearch = response.query.geosearch;
+
+        for (let place in wikiSearch) {
+            if (wikiSearch[place].hasOwnProperty('missing') === false && location === wikiSearch[place].title) {
+                Object.assign(new_search, {
+                    wikiTitle: wikiSearch[place].title,
+                    wikiExtract: wikiSearch[place].extract,
+                    wikiUrl: "https://en.wikipedia.org/wiki/" + wikiSearch[place].title
+                });
+            } else {
+                for (let place in wikiGeosearch) {
+
+                    let url = "https://en.wikipedia.org/w/api.php";
+                    let params = {
+                        action: "query",
+                        format: "json",
+                        prop: "extracts",
+                        list: "",
+                        exsentences: "10",
+                        exlimit: "1",
+                        exintro: 1,
+                        explaintext: 1,
+                        pageids: wikiGeosearch[place].pageid,
+                    };
+
+                    url = url + "?origin=*";
+                    Object.keys(params).forEach(function (key) {
+                        url += "&" + key + "=" + params[key];
+                    });
+                    console.log(url)
+
+                    fetch(url)
+                    .then(response => response.json())
+                    .then(function(response) {
+                        let wikiSearch = response.query.pages;
+                        for (let place in wikiSearch) {
+                            new_search.wikiTitle = wikiSearch[place].title;
+                            new_search.wikiExtract = wikiSearch[place].extract;
+                            new_search.wikiUrl = "https://en.wikipedia.org/wiki/" + wikiSearch[place].title;
+                        }
+                    });
+                }
+            }
+        }
+    })
+    .catch(function(error){console.log(error);});
+
+    formatNewSearch(new_search);
+}
+
+
+function formatNewSearch(new_search) {
+    console.log(new_search);
+    for (let prop in new_search) {
+        console.log(prop)
+    }
+
+    {#let queryTemplate = $("#queryContainer").clone().removeAttr("id");#}
+    {#$('#query', queryTemplate).replaceWith("<p>" + new_search.query + "</p>");#}
+    {#new_search.query = queryTemplate;#}
+    {##}
+    {#let titleTemplate = $("#pageNameContainer").clone().removeAttr("id");#}
+    {#$('#pageTitle', titleTemplate).replaceWith("<h2>" + new_search.wikiTitle + "</h2>");#}
+    {#new_search.wikiTitle = titleTemplate;#}
+    {##}
+    {#let extractTemplate = $("#wikiContainer").clone().removeAttr("id");#}
+    {#$('#wikiExtract', extractTemplate).replaceWith("<p>" + new_search.wikiExtract + "</p>");#}
+    {#new_search.wikiExtract = extractTemplate;#}
+
+}
+
+function updateSearchScreen(new_search) {
+    new_search.wikiTitle.appendTo("#scrollable");
+    new_search.query.appendTo("#scrollable");
+    new_search.wikiExtract.appendTo("#scrollable");
     scrollDiv.scrollTop = scrollDiv.scrollHeight;
 }
 
