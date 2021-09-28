@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, redirect, jsonify, make_response
-from .parser import parse
+from flask import render_template, request, jsonify
 
 from grandpy import app
-
+from .API_classes import GoogleMaps, Wiki
+from .parser import parse
 
 app.config.from_object('grandpy.config')
 
@@ -14,4 +14,12 @@ def index():
 
 @app.route("/search", methods=["POST"])
 def search():
-    return jsonify(parse(request.get_json()))
+    cleaned_query = " ".join(parse(request.get_json()))
+    maps_client = GoogleMaps()
+    locations, coordinates = maps_client.geocode(cleaned_query)
+    wiki_hits = []
+    for location in locations:
+        wiki_search = Wiki(location, coordinates)
+        wiki_request = wiki_search.wiki_query()
+        wiki_hits.append(wiki_request['query']['pages'][next(iter(wiki_request['query']['pages']))])
+    return jsonify(wiki_hits)
