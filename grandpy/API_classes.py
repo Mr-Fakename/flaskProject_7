@@ -17,7 +17,7 @@ class GoogleMaps:
 
 class Wiki:
     def __init__(self, location, coordinates):
-        self.url = "https://fr.wikipedia.org/w/api.php"
+        self.url = "https://en.wikipedia.org/w/api.php"
         self.parameters = {
             "action": "query",
             "format": "json",

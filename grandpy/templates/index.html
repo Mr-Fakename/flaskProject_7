@@ -18,9 +18,9 @@
     <div class="container" id="wikiContainer">
         <blockquote class="blockquote text-center">
             <p id="wikiExtract">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
-            <footer id="wikiLink" class="blockquote-footer">Learn more on
+            <footer id="" class="blockquote-footer">Learn more on
                 <cite>
-                    <a id="" title="Wikipedia" href="">Wikipedia</a>
+                    <a id="wikiLink" title="Wikipedia" href="">Wikipedia</a>
                 </cite>
             </footer>
         </blockquote>
@@ -63,7 +63,12 @@ function initMap() {
         $("#searchbar:text").val('');
         submitInput(input)
         .then(data => {
-            formatNewSearch(data)
+            formatNewSearch(data, input);
+            map.setCenter(data[1]);
+            new google.maps.Marker({
+                map: map,
+                position: data[1],
+            });
             }
         )
         }
@@ -84,22 +89,26 @@ async function submitInput(input) {
     return response.json();
 }
 
-function formatNewSearch(new_search) {
-    console.log(new_search);
-    for (let prop in new_search) {
-        console.log(prop)
+function formatNewSearch(new_search, input) {
+    let placeToDisplay;
+    for (const wiki_hit of new_search[0]) {
+        if (wiki_hit.extract && wiki_hit.pageid && wiki_hit.title) {
+            placeToDisplay = wiki_hit;
+            break;
+        }
     }
 
     let queryTemplate = $("#queryContainer").clone().removeAttr("id");
-    $('#query', queryTemplate).replaceWith("<p>" + new_search.query + "</p>");
+    $('#query', queryTemplate).replaceWith("<p>" + input + "</p>");
     new_search.query = queryTemplate;
 
     let titleTemplate = $("#pageNameContainer").clone().removeAttr("id");
-    $('#pageTitle', titleTemplate).replaceWith("<h2>" + new_search.wikiTitle + "</h2>");
+    $('#pageTitle', titleTemplate).replaceWith("<h2>" + placeToDisplay.title + "</h2>");
     new_search.wikiTitle = titleTemplate;
 
     let extractTemplate = $("#wikiContainer").clone().removeAttr("id");
-    $('#wikiExtract', extractTemplate).replaceWith("<p>" + new_search.wikiExtract + "</p>");
+    $('#wikiExtract', extractTemplate).replaceWith("<p>" + placeToDisplay.extract + "</p>");
+    $('#wikiLink', extractTemplate).attr("href", "https://en.wikipedia.org/wiki/" + placeToDisplay.title);
     new_search.wikiExtract = extractTemplate;
 
     updateSearchScreen(new_search)
@@ -110,7 +119,7 @@ function updateSearchScreen(new_search) {
     new_search.query.appendTo("#scrollable");
     new_search.wikiExtract.appendTo("#scrollable");
     scrollDiv.scrollTop = scrollDiv.scrollHeight;
-}
+    }
 
 
 </script>

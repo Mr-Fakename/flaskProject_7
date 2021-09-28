@@ -22,4 +22,4 @@ def search():
         wiki_search = Wiki(location, coordinates)
         wiki_request = wiki_search.wiki_query()
         wiki_hits.append(wiki_request['query']['pages'][next(iter(wiki_request['query']['pages']))])
-    return jsonify(wiki_hits)
+    return jsonify(wiki_hits, coordinates)
